@@ -13,7 +13,7 @@
 # - plotting
 
 # %% [markdown]
-# ### Libraries ###
+# ## Libraries ##
 # - use the available useful functions
 # - the functions are gather in the libraries
 # - the libraries are usually open-source projects
@@ -32,8 +32,8 @@ import numpy
 from matplotlib import pyplot as plt
 
 # %% [markdown]
-# ### Variables, Numbers, Lists ... ###
-# - you can easily define neccesary variables
+# ## Variables, Numbers, Lists ... ##
+# - you can easily define necessary variables
 # - the variables are usually defined without data type definition (boolean, int, string ... ) - all types are objects
 
 # %%
@@ -43,7 +43,7 @@ c = 0.3 # [m]
 
 angle_fi_0_s = 0 # [rad]
 angle_fi_0_e = 2*math.pi # [rad], pi is defined in the library math as constant
-angle_fi_0_num_division = 1000 # number of sections between the angle_fi_0 and the angle_fi_1
+angle_fi_0_num_division = 100 # number of sections between the angle_fi_0 and the angle_fi_1
 
 # using function from the imported library numpy 
 # each function has specified parameters
@@ -54,7 +54,7 @@ angles_fi_0 = numpy.linspace(angle_fi_0_s, angle_fi_0_e, angle_fi_0_num_division
 print(f'List of angles: {angles_fi_0} rad')
 
 # %% [markdown]
-# ### Programme flow control ###
+# ## Programme flow control ##
 # - the standard flow control tools are defined in Python https://docs.python.org/3/tutorial/controlflow.html
 # - programme blocks are defined by indentation
 
@@ -75,7 +75,7 @@ for phi_1 in angles_fi_0:
 
 
 # %% [markdown]
-# ### Function definition and Plotting ###
+# ## Function definition and Plotting ##
 # - you can easily define own functions -> do it!
 # - decompose your code into function blocks
 # - add description of your function into the code
@@ -97,17 +97,122 @@ def make_2D_graph(x, y, x_name, y_name, title):
     param title: title of the graph
     param title: str
     """
-    plt.figure(dpi=100)
+    plt.figure(1, dpi=100)
     ax = plt.axes()
-    ax.set_xlabel(x_name, labelpad=20)
-    ax.set_ylabel(y_name, labelpad=20)
+    ax.set_xlabel(x_name)
+    ax.set_ylabel(y_name)
     ax.set_title(title)
     # plot line - parameters https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
     ax.plot(x, y, 'r', linewidth=1)
     ax.grid(True)
+    ax.axis('equal')
 
 # example of usage the defined function
 # plot the trajectory of point B[x_B, y_B]
 make_2D_graph(x_B, y_B, 'x [m]', 'y [m]', 'Trajectory of point B')
+
+# %%
+# Animation of the mechanism
+from matplotlib.animation import FuncAnimation
+# init figure
+fig, ax = plt.subplots()
+
+# create dict of lines and points
+objects = {
+    'point_A' : {
+        'label': 'A',
+        'style': 'ro',
+        'x': a,
+        'y': 0,
+        'point': True,
+        'obj': None,
+    },
+    'point_B' : {
+        'label': 'A',
+        'style': 'ro',
+        'x': a + b,
+        'y': 0,
+        'point': True,
+        'obj': None,
+    },
+    'point_S1' : {
+        'label': '$S_1$',
+        'style': 'ro',
+        'x': 0,
+        'y': 0,
+        'point': True,
+        'obj': None,
+    },
+    'point_S2' : {
+        'label': '$S_2$',
+        'style': 'ro',
+        'x': c,
+        'y': 0,
+        'point': True,
+        'obj': None,
+    },
+    'line_S1A' : {
+        'style': 'k',
+        'x': [0, a],
+        'y': [0, 0],
+        'point': False,
+        'obj': None,
+    },
+    'line_AB' : {
+        'style': 'k',
+        'x': [a, a + b],
+        'y': [0, 0],
+        'point': False,
+        'obj': None,
+    },
+}
+
+# create graphic objects
+for object in objects:
+    objects[object]['obj'] = ax.plot(objects[object]['x'], objects[object]['y'], objects[object]['style'], linewidth=2)
+
+def init():
+    """
+    Function is called before update().
+    """
+    ax.set_xlabel('x [m]')
+    ax.set_ylabel('y [m]')
+    ax.set_title('Mechanism')
+    ax.plot(x_B, y_B, 'b')
+    ax.grid(True)
+    ax.axis('equal')
+    ax.set_xlim(-a, a+b)
+    ax.set_ylim(-b, b)
+
+    return [objects[object]['obj'][0] for object in objects]
+
+def update(frame):
+    """
+    Function generates each frame in the animation.
+    """
+    objects['point_A']['x'] = a * math.cos(angles_fi_0[frame])
+    objects['point_A']['y'] = a * math.sin(angles_fi_0[frame])
+
+    objects['point_B']['x'] = x_B[frame]
+    objects['point_B']['y'] = y_B[frame]
+
+    objects['line_S1A']['x'] = [0, objects['point_A']['x']]
+    objects['line_S1A']['y'] = [0, objects['point_A']['y']]
+
+    objects['line_AB']['x'] = [objects['point_A']['x'], objects['point_B']['x']]
+    objects['line_AB']['y'] = [objects['point_A']['y'], objects['point_B']['y']]
+
+    for object in objects:
+        objects[object]['obj'][0].set_data(objects[object]['x'], objects[object]['y'])
+
+    return [objects[object]['obj'][0] for object in objects]
+
+# object generates animation
+# def of number of frames and FPS
+animation = FuncAnimation(fig, update, frames=range(len(angles_fi_0)), init_func=init, blit=True)
+
+# save the animation into .gif
+animation.save('motion.gif', fps=15)
+plt.show()
 
 
